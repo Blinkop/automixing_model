@@ -16,7 +16,6 @@ def train(X_train, Y_train):
     checkpoint = ModelCheckpoint('darknet19_weights.h5',
                                  monitor='val_loss',
                                  verbose=1,
-                                 save_best_only=False,
                                  period=EPOCHS_PERIOD,
                                  save_weights_only=True,
                                  save_best_only=True)
@@ -27,7 +26,9 @@ def train(X_train, Y_train):
                               write_images=True,
                               write_grads=True)
 
-    model.fit(x=X_train, y=Y_train, epochs = 8, batch_size=10, callbacks=[checkpoint, tensorboard], shuffle=True, validation_split=0.1)
+    model.fit(x=X_train, y=Y_train, epochs = 8, 
+              batch_size=10, callbacks=[checkpoint, tensorboard], 
+              shuffle=True, validation_split=0.1)
 
     return model
     

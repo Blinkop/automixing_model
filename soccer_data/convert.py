@@ -4,12 +4,11 @@ from concurrent.futures import ThreadPoolExecutor
 import pickle
 import time
 
-from scipy.sparse import coo_matrix
 import pandas as pd
 import imageio
 import numpy as np
 
-from utils import chunks
+from soccer_data.utils import chunks
 
 class DatasetConverter:
     """
@@ -37,12 +36,28 @@ class DatasetConverter:
         self.num_records = 0
         
     def load(self):
-        self._records = pd.read_csv(self._csv_path) \
-                          .drop(['fieldBallX', 'fieldBallY', 'fieldBallZ'], axis=1)
-        to_keep = self._records['screenshotBallX'].dropna().keys()
-        self._records = self._records.iloc[to_keep]
+        csv_data = pd.read_csv(self._csv_path) \
+                     .drop(['fieldBallX', 'fieldBallY', 'fieldBallZ'], axis=1)
+        to_keep = csv_data['screenshotBallX'].dropna().keys()
+        self._records = csv_data.iloc[to_keep]
         self.num_records = len(self._records)
         return self
+
+    def get_chunks(self, chunk_size):
+        images = np.zeros((0, *self._image_size, 3))
+        labels = np.zeros((0, *self._grid_size, 5))
+        
+        for current_row in range(self.num_records):
+            image, label = self.convert(current_row)
+            image = np.expand_dims(image, axis=0)
+            label = np.expand_dims(label, axis=0)
+            images = np.append(images, image, axis=0)
+            labels = np.append(labels, label, axis=0)
+            
+            if (current_row+1) % chunk_size == 0:
+                yield images, labels
+                images = np.zeros((0, *self._image_size, 3))
+                labels = np.zeros((0, *self._grid_size, 5))
 
     def convert(self, row_number):
         row = self._records.iloc[row_number]
@@ -88,6 +103,7 @@ class DatasetConverter:
     def __iter__(self):
         for current_row in range(len(self._records)):
             yield self.convert(current_row)
+
 
 def transform_and_load(labels_path='football-data.csv', images_path='screenshots',
                        test_size=30, storage_folder_path='pickled_data'):
