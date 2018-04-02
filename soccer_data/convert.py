@@ -9,11 +9,11 @@ import pandas as pd
 import imageio
 import numpy as np
 
-from soccer_data.utils import chunks
+from utils import chunks
 
 class DatasetConverter:
     """
-    Outouts (image, yolo_label) pair, one at a time.
+    Outputs (image, yolo_label) pair, one at a time.
 
     # Usage:
     kek = DatasetConverter(csv_path, image_folder).load()
@@ -39,6 +39,8 @@ class DatasetConverter:
     def load(self):
         self._records = pd.read_csv(self._csv_path) \
                           .drop(['fieldBallX', 'fieldBallY', 'fieldBallZ'], axis=1)
+        to_keep = self._records['screenshotBallX'].dropna().keys()
+        self._records = self._records.iloc[to_keep]
         self.num_records = len(self._records)
         return self
 

@@ -1,6 +1,8 @@
 import numpy as np
+import h5py
 from soccer_data.convert import DatasetConverter
 from soccer_data.convert import transform_and_load
+from keras.utils.io_utils import HDF5Matrix
 
 class WeightReader:
     def __init__(self, weight_file):
@@ -57,9 +59,18 @@ def load_yolov2_weights(model, path):
 
     return model
 
+def create_hdf5_data(filename, size=(416, 416, 3), chunk_size=(32, 416, 416, 3)):
+    with h5py.File(filename, 'w') as file:
+        maxshape = (None, ) + size
+        dataset = file.create_dataset('images', shape=chunk_size, maxshape=maxshape, chunks=chunk_size)
 
-def load_data(labels_path, images_path, pick_path, size=416, test_size = 100):
-    return transform_and_load(labels_path=labels_path,
-                              images_path=images_path,
-                              test_size=test_size,
-                              storage_folder_path=pick_path)
+        
+
+def normalize_data(data):
+    return data / 255
+
+def load_data(data_path, start, num_examples):
+    X = HDF5Matrix(datapath=data_path, dataset='images', start=start, end=start+num_examples, normalizer=normalize_data)
+    Y = HDF5Matrix(datapath=data_path, dataset='labels', start=start, end=start+num_examples)
+
+    return X[:], Y[:]
