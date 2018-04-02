@@ -18,7 +18,8 @@ def train(X_train, Y_train):
                                  verbose=1,
                                  save_best_only=False,
                                  period=EPOCHS_PERIOD,
-                                 save_weights_only=True)
+                                 save_weights_only=True,
+                                 save_best_only=True)
 
     tensorboard = TensorBoard('logs',
                               histogram_freq=EPOCHS_PERIOD,

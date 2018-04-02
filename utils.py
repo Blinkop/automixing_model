@@ -37,7 +37,7 @@ def load_yolov2_weights(model, path):
 
         if len(conv_layer.get_weights()) > 1:
             bias = reader.read_bytes(np.prod(conv_layer.get_weights()[1].shape))
-            kernel = reader.read_bytes(p.prod(conv_layer.get_weights()[0].shape))
+            kernel = reader.read_bytes(np.prod(conv_layer.get_weights()[0].shape))
             kernel = kernel.reshape(list(reversed(conv_layer.get_weights()[0].shape)))
             kernel = kernel.transpose([2, 3, 1, 0])
             conv_layer.set_weights([kernel, bias])
@@ -59,10 +59,28 @@ def load_yolov2_weights(model, path):
 
     return model
 
-def create_hdf5_data(filename, size=(416, 416, 3), chunk_size=(32, 416, 416, 3)):
+def create_hdf5_data(filename, X_size=(416, 416, 3), Y_size=(13, 13, 5), chunk_size=32):
     with h5py.File(filename, 'w') as file:
-        maxshape = (None, ) + size
-        dataset = file.create_dataset('images', shape=chunk_size, maxshape=maxshape, chunks=chunk_size)
+        X_maxshape = (None, ) + X_size
+        Y_maxshape = (None, ) + Y_size
+        Y_chunk_size = (chunk_size, ) + Y_size
+        X_chunk_size = (chunk_size, ) + X_size
+
+        dataset_images = file.create_dataset('images', shape=X_chunk_size, maxshape=X_maxshape, chunks=X_chunk_size)
+        dataset_labels = file.create_dataset('labels', shape=Y_chunk_size, maxshape=Y_maxshape, chunks=Y_chunk_size)
+
+        # get chunk generator
+        chunks = None
+        chunk_offset = chunk_size
+        
+        for x_chunk, y_chunk in chunks:
+            dataset_images.resize(chunk_offset, axis=0)
+            dataset_labels.resize(chunk_offset, axis=0)
+
+            dataset_images[chunk_offset:] = x_chunk
+            dataset_labels[chunk_offset:] = y_chunk
+
+            chunk_offset += chunk_offset
 
         
 
