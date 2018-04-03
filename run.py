@@ -5,6 +5,9 @@ import utils
 from keras.optimizers import Adam
 import numpy as np
 
+from soccer_data.convert import DatasetConverter
+import h5py
+
 def build_graph(model):
     yolo_outputs = Y.yolo_head(model.output)
     return yolo_outputs
@@ -28,6 +31,15 @@ def main():
 #     yolo_outputs = build_graph(model)
 #     ball_prob, ball_xy = Y.yolo_eval(yolo_outputs)
     
+
+def bek(k):
+    gek = DatasetConverter('soccer_data/football-data.csv', 'soccer_data/screenshots').load()
+    gen = gek.get_chunks(k)
+    utils.create_hdf5_data(gen, 'data.h5', chunk_size=k)
+
+    h5f = h5py.File('data.h5', 'r')
+    data_x = h5f['images']
+    data_y = h5f['labels']
 
 
 if __name__ == '__main__':

@@ -66,24 +66,20 @@ def create_hdf5_data(chunks_generator, filename, X_size=(416, 416, 3),
         Y_chunk_size = (chunk_size, ) + Y_size
         X_chunk_size = (chunk_size, ) + X_size
 
-        dataset_images = file.create_dataset('images', shape=X_chunk_size, maxshape=X_maxshape, chunks=X_chunk_size)
-        dataset_labels = file.create_dataset('labels', shape=Y_chunk_size, maxshape=Y_maxshape, chunks=Y_chunk_size)
+        dataset_images = file.create_dataset('images', compression='gzip', shape=X_chunk_size, maxshape=X_maxshape, chunks=X_chunk_size)
+        dataset_labels = file.create_dataset('labels', compression='gzip', shape=Y_chunk_size, maxshape=Y_maxshape, chunks=Y_chunk_size)
 
-        # get chunk generator
-        # converter = DatasetConverter(from_csv, from_image_folder).load()
-        # chunks_generator = converter.get_chunks(chunk_size)
-        chunk_offset = chunk_size
+        chunk_offset = 0
         
         for x_chunk, y_chunk in chunks_generator:
-            dataset_images.resize(chunk_offset, axis=0)
-            dataset_labels.resize(chunk_offset, axis=0)
+            print(chunk_offset)
+            dataset_images.resize(chunk_offset + x_chunk.shape[0], axis=0)
+            dataset_labels.resize(chunk_offset + y_chunk.shape[0], axis=0)
 
             dataset_images[chunk_offset:] = x_chunk
             dataset_labels[chunk_offset:] = y_chunk
 
-            chunk_offset += chunk_offset
-
-        
+            chunk_offset += chunk_size
 
 def normalize_data(data):
     return data / 255
@@ -93,3 +89,11 @@ def load_data(data_path, start, num_examples):
     Y = HDF5Matrix(datapath=data_path, dataset='labels', start=start, end=start+num_examples)
 
     return X[:], Y[:]
+
+def getBatchGenerator(data_path, batch_size):
+    h5f = h5py.File(data_path, 'r')
+    length = h5f['labels'].shape[0]
+    h5f.close()
+    
+    for start in range(0, length, batch_size):
+        yield load_data(data_path, start, batch_size)

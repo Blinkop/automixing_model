@@ -59,6 +59,9 @@ class DatasetConverter:
                 images = np.zeros((0, *self._image_size, 3))
                 labels = np.zeros((0, *self._grid_size, 5))
 
+        if np.count_nonzero(images) or np.count_nonzero(labels):
+            yield images, labels
+
     def convert(self, row_number):
         row = self._records.iloc[row_number]
         image_path = join(self._image_folder_path, row['picName'])
