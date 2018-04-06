@@ -6,9 +6,10 @@ import utils
 from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint, TensorBoard
 
-def train(data_file, epochs):
+def train(data_file):
     EPOCHS_PERIOD = 1
-    NUM_EXAMPLES = 1024
+    BATCH_SIZE = 64
+    STEPS_PER_EPOCH = 41128 // BATCH_SIZE
     model = M.yolo_darknet19(input_shape=(416, 416, 3), output_depth=5)
     model = utils.load_yolov2_weights(model, 'yolov2.weights') # DANGEROUS
     optimizer = Adam(lr=1e-3, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
@@ -27,12 +28,14 @@ def train(data_file, epochs):
                               write_images=True,
                               write_grads=True)
 
-    for e in range(epochs):
-        print('Epoch ', e, ' ...')
-        for X_train, Y_train in utils.getBatchGenerator(data_file, NUM_EXAMPLES):
-            model.fit(x=X_train, y=Y_train, epochs=1, batch_size=16, 
-                      callbacks=[checkpoint, tensorboard],
-                      shuffle=True, validation_split=0.05)
+    model.fit_generator(generator=utils.BatchGenerator('data.h5', BATCH_SIZE),
+                        steps_per_epoch=STEPS_PER_EPOCH,
+                        epochs=128,
+                        verbose=1,
+                        shuffle=True,
+                        max_queue_size=8,
+                        validation_data=utils.load_data('data.h5', 300, 4),
+                        callbacks=[checkpoint, tensorboard])
 
     return model
     

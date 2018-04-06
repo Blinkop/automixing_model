@@ -88,12 +88,22 @@ def load_data(data_path, start, num_examples):
     X = HDF5Matrix(datapath=data_path, dataset='images', start=start, end=start+num_examples, normalizer=normalize_data)
     Y = HDF5Matrix(datapath=data_path, dataset='labels', start=start, end=start+num_examples)
 
-    return X[:], Y[:]
+    return (X[:], Y[:])
 
-def getBatchGenerator(data_path, batch_size):
+def BatchGenerator(data_path, batch_size):
     h5f = h5py.File(data_path, 'r')
-    length = h5f['labels'].shape[0]
+    length, size, _, channels = h5f['images'].shape
     h5f.close()
-    
-    for start in range(0, length, batch_size):
-        yield load_data(data_path, start, batch_size)
+
+    while True:
+        file = h5py.File(data_path, 'r')
+        num_entries = 0
+
+        while num_entries < (length - batch_size):
+            X = file['images'][num_entries : num_entries + batch_size] / 255
+            Y = file['labels'][num_entries : num_entries + batch_size]
+
+            num_entries += batch_size
+            yield (X, Y)
+        
+        file.close()
