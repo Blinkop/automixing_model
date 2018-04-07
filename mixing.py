@@ -12,7 +12,7 @@ def train(data_file):
     STEPS_PER_EPOCH = 41128 // BATCH_SIZE
     model = M.yolo_darknet19(input_shape=(416, 416, 3), output_depth=5)
     #model = utils.load_yolov2_weights(model, 'yolov2.weights') # DANGEROUS
-    model.load_weights('darknet19_wights.h5')
+    model.load_weights('darknet19_weights.h5')
     optimizer = Adam(lr=1e-3, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
     model.compile(optimizer=optimizer, loss=Y.yolo_loss)
 
