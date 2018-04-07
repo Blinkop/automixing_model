@@ -11,7 +11,8 @@ def train(data_file):
     BATCH_SIZE = 64
     STEPS_PER_EPOCH = 41128 // BATCH_SIZE
     model = M.yolo_darknet19(input_shape=(416, 416, 3), output_depth=5)
-    model = utils.load_yolov2_weights(model, 'yolov2.weights') # DANGEROUS
+    #model = utils.load_yolov2_weights(model, 'yolov2.weights') # DANGEROUS
+    model.load_weights('darknet19_wights.h5')
     optimizer = Adam(lr=1e-3, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
     model.compile(optimizer=optimizer, loss=Y.yolo_loss)
 
@@ -33,9 +34,10 @@ def train(data_file):
                         epochs=128,
                         verbose=1,
                         shuffle=True,
-                        max_queue_size=8,
+                        max_queue_size=16,
                         validation_data=utils.load_data('data.h5', 300, 4),
-                        callbacks=[checkpoint, tensorboard])
+                        callbacks=[checkpoint, tensorboard],
+                        initial_epoch=3)
 
     return model
     
