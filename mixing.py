@@ -3,16 +3,21 @@ import tensorflow as tf
 import yolo as Y
 import model as M
 import utils
+from soccer_data.convert import DatasetConverter
 from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint, TensorBoard
 
+def create_data(chunk_size, csv_path='soccer_data/football-data.csv', screenshots_path='soccer_data/screenshots', output_name='data.h5'):
+    converter = DatasetConverter(csv_path, screenshots_path).load()
+    gen = converter.get_chunks(chunk_size)
+    utils.create_hdf5_data(gen, 'data.h5', chunk_size=chunk_size)
+
 def train(data_file):
     EPOCHS_PERIOD = 1
-    BATCH_SIZE = 64
+    BATCH_SIZE = 32
     STEPS_PER_EPOCH = 41128 // BATCH_SIZE
     model = M.yolo_darknet19(input_shape=(416, 416, 3), output_depth=5)
-    #model = utils.load_yolov2_weights(model, 'yolov2.weights') # DANGEROUS
-    model.load_weights('darknet19_weights.h5')
+    model.load_weights('darknet19_weights_full.h5')
     optimizer = Adam(lr=1e-3, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
     model.compile(optimizer=optimizer, loss=Y.yolo_loss)
 

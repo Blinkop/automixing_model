@@ -2,34 +2,47 @@ import numpy as np
 import tensorflow as tf
 import keras.backend as K
 
-def predict(sess, data):
-    pass
+def predict(sess, data, yolo_output, model):
+    bP, bX, bY = yolo_output
 
+    out_bP, out_bX, out_bY = sess.run([bP, bX, bY], feed_dict={model.input : data, K.learning_phase() : 0})
+    m = out_bP.shape[0]
+
+    for i in range(m):
+        print('Image_' + str(i) + ' : with probability of '
+             + str(out_bP[i])
+             + 'ball coords are (' + str(out_bX[i]) + str(out_bY[i]) + ')')
+    
 def yolo_eval(yolo_output):
+    """
+    Returns dictionary with top-1 ball probability
+    and top-11 players probability
+    ball : (prob, x, y)
+    player1 : (prob, x, y)
+    ...
+    player11 : (prob, x, y)
+    """
     conf, xy, classes = yolo_output
     conf_shape = K.shape(conf)
     m, grid_size = conf_shape[0], conf_shape[1]
     grid_pix_size = 32
 
-    class_probs = tf.multiply(conf, classes)
-    ball_probs = K.reshape(class_probs[..., 0], (m, grid_size * grid_size)) # Mx(GRID_SIZE*GRID_SIZE)
-    players_probs = K.reshape(class_probs[..., 1], (m, grid_size * grid_size)) # Mx(GRID_SIZE*GRID_SIZE)
+    class_probs = tf.multiply(conf, classes) # conf_object * class_conf          (M, GRID_SIZE, GRID_SIZE, 2)
+    ball_probs = K.reshape(class_probs[..., 0], (m, grid_size * grid_size)) #    (M, GRID_SIZE * GRID_SIZE)
+    players_probs = K.reshape(class_probs[..., 1], (m, grid_size * grid_size)) # (M, GRID_SIZE * GRID_SIZE)    
 
-    
+    _ball_idx = K.cast(K.argmax(ball_probs, axis=-1), 'int32') # (M, )
+    _ball_idx = tf.expand_dims(_ball_idx, axis=-1)             # (M, 1)
+    ball_idx = tf.concat([tf.expand_dims(tf.range(m), axis=-1), _ball_idx // grid_size, _ball_idx % grid_size], axis=1) # (M, 3)
 
-    ball_index = K.argmax(ball_probs, axis=-1) # (M, )
-    ball_x_index = xy[:, ball_index[0], 0]
-    ball_y_index = xy[:, ball_index[0], 1]
-    print(K.int_shape(ball_x_index))
-    print(K.int_shape(ball_y_index))
+    ball_x = tf.gather_nd(xy[..., 0], ball_idx, name='ball_x_index')
+    ball_y = tf.gather_nd(xy[..., 1], ball_idx, name='ball_y_index')
 
-    # ball_x = grid_pix_size * (ball_x_index + xy[ball_x_index, ball_y_index, 0])
-    # ball_y = grid_pix_size * (ball_y_index + xy[ball_x_index, ball_y_index, 1])
-    # ball_xy = (ball_x, ball_y)
-    # ball_prob = class_probs[ball_x_index, ball_y_index, 0]
+    ball_x = grid_pix_size * (K.cast(ball_idx[:, 1], 'float32') + ball_x)
+    ball_y = grid_pix_size * (K.cast(ball_idx[:, 2], 'float32') + ball_y)
+    ball_prob = tf.gather_nd(class_probs[..., 0], ball_idx, name='ball_prob')
 
-    # return (ball_prob, ball_xy)
-    return 1, 1
+    return (ball_prob, ball_x, ball_y)
 
 
 def yolo_head(input):
