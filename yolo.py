@@ -4,14 +4,9 @@ import keras.backend as K
 
 def predict(sess, data, yolo_output, model):
     bP, bX, bY = yolo_output
-
     out_bP, out_bX, out_bY = sess.run([bP, bX, bY], feed_dict={model.input : data, K.learning_phase() : 0})
-    m = out_bP.shape[0]
 
-    for i in range(m):
-        print('Image_' + str(i) + ' : with probability of '
-             + str(out_bP[i])
-             + 'ball coords are (' + str(out_bX[i]) + str(out_bY[i]) + ')')
+    return (out_bP, out_bX, out_bY)
     
 def yolo_eval(yolo_output):
     """

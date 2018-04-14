@@ -7,6 +7,29 @@ from soccer_data.convert import DatasetConverter
 from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint, TensorBoard
 
+def predict(real_time=False):
+    sess = K.get_session()
+
+    X_test, Y_test = utils.load_data('data.h5', 0, 1)
+
+    model = M.yolo_darknet19(input_shape=(416, 416, 3), output_depth=5)
+    model.load_weights('darknet19_weights_full_66.h5')
+    yolo_outputs = Y.yolo_head(model.output)
+    to_evaluate = Y.yolo_eval(yolo_outputs)
+
+    p, x, y = Y.predict(sess, X_test, to_evaluate, model)
+    m = p.shape[0]
+
+    if not real_time:
+        for i in range(m):
+            print('Image_' + str(i) + ' : with probability of '
+                + str(p[i])
+                + 'ball coords are (' + str(x[i]) + '; ' + str(y[i]) + ')')
+
+            utils.draw_result(X_test[i,...], x[i], y[i])
+    else:
+        pass
+
 def create_data(chunk_size, csv_path='soccer_data/football-data.csv', screenshots_path='soccer_data/screenshots', output_name='data.h5'):
     converter = DatasetConverter(csv_path, screenshots_path).load()
     gen = converter.get_chunks(chunk_size)

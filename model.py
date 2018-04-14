@@ -138,14 +138,6 @@ def yolo_darknet19(input_shape = (416, 416, 3), output_depth = 5):
 
     model = Model(inputs=X_input, outputs=X, name='Yolo DarkNet19')
 
-    for layer in model.layers:
-        layer.trainable = False
-
-    model.layers[-1].trainable = True
-    model.layers[-2].trainable = True
-    model.layers[-3].trainable = True
-    model.layers[-4].trainable = True
-
     return model
 
 def yolo_layer(X, depth):

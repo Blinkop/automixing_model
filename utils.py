@@ -1,5 +1,8 @@
 import numpy as np
 import h5py
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+import matplotlib.patches as patches
 from soccer_data.convert import DatasetConverter, transform_and_load
 from keras.utils.io_utils import HDF5Matrix
 
@@ -12,6 +15,13 @@ class WeightReader:
         return self.all_weights[self.offset - size:self.offset]
     def reset(self):
         self.offset = 4
+
+def draw_result(img, x, y):
+    fig, ax = plt.subplots(1)
+    ax.imshow(img)
+    rect = patches.Rectangle((x - 5, y - 5), 10, 10, linewidth=1, edgecolor='r', facecolor='none')
+    ax.add_patches(rect)
+    plt.show()
 
 def load_yolov2_weights(model, path):
     reader = WeightReader(path)
